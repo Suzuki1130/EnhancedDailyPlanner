@@ -109,15 +109,31 @@ function toggleSidebar() {
 }
 
 // Toggle metadata panel
-function toggleMetadataPanel() {
-    const metadataPanel = document.getElementById("noteMetadata");
-    const toggleBtn = document.getElementById("toggleMetadata");
-    
-    isMetadataPanelCollapsed = !isMetadataPanelCollapsed;
-    
-    metadataPanel.classList.toggle("collapsed", isMetadataPanelCollapsed);
-    toggleBtn.innerText = isMetadataPanelCollapsed ? "▶ Show Details" : "◀ Hide Details";
-}
+document.getElementById("toggleMetadata").addEventListener("click", function() {
+  const metadataPanel = document.getElementById("noteMetadata");
+  const toggleBtn = document.getElementById("toggleMetadata");
+  
+  metadataPanel.classList.toggle("collapsed");
+  
+  if (metadataPanel.classList.contains("collapsed")) {
+      toggleBtn.innerText = window.innerWidth <= 768 ? "▼ Show Details" : "▶ Show Details";
+  } else {
+      toggleBtn.innerText = window.innerWidth <= 768 ? "▲ Hide Details" : "◀ Hide Details";
+  }
+});
+
+document.getElementById("sidebarToggle").addEventListener("click", function() {
+  const sidebar = document.getElementById("sidebar");
+  const toggleIcon = document.getElementById("sidebarToggleIcon");
+  
+  sidebar.classList.toggle("open");
+  
+  if (sidebar.classList.contains("open")) {
+      toggleIcon.innerText = "◀";
+  } else {
+      toggleIcon.innerText = "▶";
+  }
+});
 
 // Function to save data
 function saveProgress() {
@@ -1028,23 +1044,6 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(hookSaveFunctions, 100);
 });
 
-// Add this function to your auth.js file
-function updateSidebarWidth() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-      sidebar.style.width = '18%';
-    }
-  }
-  
-  // Call this function after the DOM is loaded
-  document.addEventListener('DOMContentLoaded', function() {
-    // Your existing code
-    // ...
-    
-    // Update sidebar width
-    updateSidebarWidth();
-  });
-
 // Add styles for auth components
 function addAuthStyles() {
   const styleElement = document.createElement('style');
@@ -1175,3 +1174,19 @@ function addAuthStyles() {
   `;
   document.head.appendChild(styleElement);
 }
+// Add this function to your auth.js file
+function updateSidebarWidth() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.style.width = '20%';
+    }
+  }
+  
+  // Call this function after the DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // Your existing code
+    // ...
+    
+    // Update sidebar width
+    updateSidebarWidth();
+  });
