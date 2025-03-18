@@ -109,31 +109,15 @@ function toggleSidebar() {
 }
 
 // Toggle metadata panel
-document.getElementById("toggleMetadata").addEventListener("click", function() {
-  const metadataPanel = document.getElementById("noteMetadata");
-  const toggleBtn = document.getElementById("toggleMetadata");
-  
-  metadataPanel.classList.toggle("collapsed");
-  
-  if (metadataPanel.classList.contains("collapsed")) {
-      toggleBtn.innerText = window.innerWidth <= 768 ? "▼ Show Details" : "▶ Show Details";
-  } else {
-      toggleBtn.innerText = window.innerWidth <= 768 ? "▲ Hide Details" : "◀ Hide Details";
-  }
-});
-
-document.getElementById("sidebarToggle").addEventListener("click", function() {
-  const sidebar = document.getElementById("sidebar");
-  const toggleIcon = document.getElementById("sidebarToggleIcon");
-  
-  sidebar.classList.toggle("open");
-  
-  if (sidebar.classList.contains("open")) {
-      toggleIcon.innerText = "◀";
-  } else {
-      toggleIcon.innerText = "▶";
-  }
-});
+function toggleMetadataPanel() {
+    const metadataPanel = document.getElementById("noteMetadata");
+    const toggleBtn = document.getElementById("toggleMetadata");
+    
+    isMetadataPanelCollapsed = !isMetadataPanelCollapsed;
+    
+    metadataPanel.classList.toggle("collapsed", isMetadataPanelCollapsed);
+    toggleBtn.innerText = isMetadataPanelCollapsed ? "▶ Show Details" : "◀ Hide Details";
+}
 
 // Function to save data
 function saveProgress() {
