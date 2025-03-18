@@ -1,0 +1,490 @@
+/* Additional styles for the note content */
+.note-preview {
+    color: #777;
+    font-size: 0.9em;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    max-height: 40px;
+    overflow: hidden;
+    white-space: pre-line;
+}
+
+/* Make the note title more prominent */
+.note-title strong {
+    font-size: 1.1em;
+}
+
+/* Make the content textarea larger in the modal */
+#noteContentInput, #noteContent {
+    min-height: 200px;
+    padding: 12px;
+    line-height: 1.5;
+    font-size: 1em;
+}
+
+/* Make the modal bigger when adding a note */
+.modal-full {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Focus styles for the content textarea */
+#noteContentInput:focus, #noteContent:focus {
+    border-color: var(--button-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Responsive design for notes */
+@media (max-width: 768px) {
+    .note {
+        flex-direction: column;
+    }
+    
+    .note-actions {
+        margin-top: 10px;
+        align-self: flex-end;
+    }
+}
+
+/* Split View Layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 40%;
+    transition: width 0.3s ease;
+    overflow-y: auto;
+    border-right: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    position: relative;
+}
+
+.sidebar.collapsed {
+    width: 0;
+}
+
+.content-area {
+    flex-grow: 1;
+    width: 70%;
+    transition: width 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-area.expanded {
+    width: 100%;
+}
+
+.toggle-sidebar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    padding: 5px;
+    background-color: var(--button-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.toggle-sidebar:hover {
+    opacity: 1;
+}
+
+/* Note Editor Layout */
+.note-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: var(--card-background);
+}
+
+.note-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.note-editor-content {
+    flex-grow: 1;
+    display: flex;
+    gap: 20px;
+}
+
+.note-textarea-container {
+    flex-grow: 1;
+    transition: width 0.3s ease;
+}
+
+.note-metadata {
+    width: 250px;
+    transition: width 0.3s ease, opacity 0.3s ease;
+    padding: 15px;
+    border-left: 1px solid var(--border-color);
+    background-color: var(--card-background);
+}
+
+.note-metadata.collapsed {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.note-editor-textarea {
+    width: 100%;
+    height: calc(100vh - 180px);
+    resize: none;
+    padding: 15px;
+    font-size: 1.1em;
+    line-height: 1.6;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.note-editor-textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.note-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--border-color);
+    margin-top: 15px;
+}
+
+.toggle-metadata {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.toggle-metadata:hover {
+    background-color: var(--hover-color);
+}
+
+/* Animation for sidebar toggle button that stays visible */
+.sidebar-toggle-fixed {
+    position: fixed;
+    left: 10px;
+    top: 70px;
+    z-index: 100;
+    padding: 8px;
+    border-radius: 50%;
+    background-color: var(--button-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    transition: left 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar-toggle-fixed.sidebar-open {
+    left: calc(40% - 20px);
+}
+
+/* Animation and transitions */
+.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        position: absolute;
+        z-index: 50;
+        height: 100vh;
+    }
+    
+    .content-area {
+        width: 100%;
+    }
+    
+    .note-metadata {
+        position: absolute;
+        right: 0;
+        height: 100%;
+        z-index: 40;
+    }
+    
+    .sidebar-toggle-fixed.sidebar-open {
+        left: calc(100% - 50px);
+    }
+}
+
+/* Toast notification */
+#toast {
+    opacity: 0;
+}
+
+/* Hidden class */
+.hidden {
+    display: none !important;
+}
+
+/* Welcome screen */
+.welcome-screen {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.welcome-content {
+    max-width: 600px;
+    padding: 20px;
+}
+
+/* Form control styles */
+.form-control {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+}
+
+.info-text {
+    margin-top: 5px;
+    padding: 8px;
+    background-color: var(--hover-color);
+    border-radius: 4px;
+}
+
+/* Sidebar and Split View Styles */
+#sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+#contentArea.expanded {
+    margin-left: 0;
+    width: 100%;
+}
+
+#sidebarToggle {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    z-index: 100;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    padding: 10px;
+    cursor: pointer;
+    transition: left 0.3s ease;
+}
+
+#sidebarToggle.sidebar-open {
+    left: 250px;
+}
+
+/* Metadata panel */
+#noteMetadata {
+    width: 250px;
+    padding: 15px;
+    background-color: var(--card-background);
+    border-left: 1px solid var(--border-color);
+    transition: width 0.3s ease;
+}
+
+#noteMetadata.collapsed {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Note editor */
+#noteEditor {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.editor-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.editor-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#noteEditorTextarea {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    resize: none;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.editor-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.metadata-field {
+    margin-bottom: 15px;
+}
+
+.metadata-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.metadata-dates {
+    margin-top: 20px;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+}
+
+.search-result {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.result-info {
+    flex: 1;
+    min-width: 0; /* Prevents text from pushing button off screen */
+    margin-right: 10px;
+}
+
+.result-title {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-folder {
+    color: #888;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-open-btn {
+    flex-shrink: 0; /* Prevents button from shrinking */
+    padding: 5px 10px;
+    background-color: var(--accent-color, #4CAF50);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.sidebar {
+    transition: transform 0.3s ease, margin-left 0.3s ease;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 300px; /* Adjust this to your sidebar width */
+    z-index: 50;
+    overflow-y: auto;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+    margin-left: -300px; /* Should match sidebar width */
+}
+
+#contentArea {
+    transition: width 0.3s ease, margin-left 0.3s ease;
+    margin-left: 300px; /* Should match sidebar width */
+    width: calc(100% - 300px);
+}
+
+#contentArea.expanded {
+    width: 100%;
+    margin-left: 0;
+}
+
+.sidebar-toggle-fixed {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--accent-color, #4CAF50);
+    color: white;
+    padding: 10px;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: left 0.3s ease;
+}
+
+/* When sidebar is expanded, move toggle button to edge of sidebar */
+.sidebar:not(.collapsed) + .sidebar-toggle-fixed {
+    left: 300px; /* Should match sidebar width */
+}
