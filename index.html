@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enhanced Daily Planner</title>
-    <ol>(BETA) Still In Progress Fixing More Bugs ARGHHHH</ol>
     <style>
         :root {
             --background-color: #f5f5f5;
@@ -153,12 +152,11 @@
             width: 250px;
             padding: 0 15px;
             border-left: 1px solid var(--border-color);
-            transition: width 0.3s ease;
         }
         
         .note-actions-bar {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 10px 0;
             border-top: 1px solid var(--border-color);
         }
@@ -501,6 +499,144 @@
             border: 1px solid var(--border-color);
             border-radius: 4px;
         }
+
+        /* Responsive Media Queries */
+        @media screen and (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .sidebar-toggle-fixed {
+                top: auto;
+                bottom: 20px;
+                left: 20px;
+                transform: none;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                box-shadow: 0 2px 8px var(--shadow-color);
+            }
+            
+            .content-area {
+                height: auto;
+                flex: 1;
+            }
+            
+            .note-editor-content {
+                flex-direction: column;
+            }
+            
+            .note-metadata {
+                width: 100%;
+                padding: 15px 0;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                margin-top: 15px;
+            }
+            
+            .note-textarea-container {
+                padding-right: 0;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header h1 {
+                margin-bottom: 10px;
+            }
+            
+            .toolbar {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .folder-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .folder-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .note {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .note-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-width: none;
+                padding: 15px;
+            }
+            
+            .note-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            /* Improved form controls for mobile */
+            .form-group select,
+            .form-group input,
+            textarea {
+                font-size: 16px; /* Prevents iOS zoom on focus */
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-buttons button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+        
+        /* Small phones */
+        @media screen and (max-width: 480px) {
+            .content-area {
+                padding: 10px;
+            }
+            
+            .note-editor-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .note-editor-header h2 {
+                margin-bottom: 10px;
+            }
+            
+            .welcome-content {
+                padding: 15px;
+            }
+            
+            .folder {
+                margin: 10px 0;
+            }
+        }
     </style>
     <script defer src="script.js"></script>
 </head>
@@ -594,7 +730,7 @@
                 
                 <div class="note-actions-bar">
                     <div>
-                        <button class="toggle-metadata" id="toggleMetadata">◀ Toggle Details</button>
+                        <!-- Toggle Details button removed -->
                     </div>
                     <div>
                         <button class="delete-note" id="editorDeleteNote">🗑️ Delete Note</button> 

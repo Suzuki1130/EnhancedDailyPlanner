@@ -1,505 +1,539 @@
-/* Additional styles for the note content */
-.note-preview {
-    color: #777;
-    font-size: 0.9em;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    max-height: 40px;
-    overflow: hidden;
-    white-space: pre-line;
-}
-
-/* Make the note title more prominent */
-.note-title strong {
-    font-size: 1.1em;
-}
-
-/* Make the content textarea larger in the modal */
-#noteContentInput, #noteContent {
-    min-height: 200px;
-    padding: 12px;
-    line-height: 1.5;
-    font-size: 1em;
-}
-
-/* Make the modal bigger when adding a note */
-.modal-full {
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-/* Focus styles for the content textarea */
-#noteContentInput:focus, #noteContent:focus {
-    border-color: var(--button-primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-/* Responsive design for notes */
-@media (max-width: 768px) {
-    .note {
-        flex-direction: column;
-    }
-    
-    .note-actions {
-        margin-top: 10px;
-        align-self: flex-end;
-    }
-}
-
-/* Split View Layout */
-.app-container {
+/* Base variables for theming */
+:root {
+    --button-primary: #4CAF50;
+    --border-color: #e0e0e0;
+    --background-color: #f9f9f9;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --secondary-text-color: #777777;
+    --accent-color: #4CAF50;
+    --hover-color: #f0f0f0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Mobile-first approach */
+  * {
+    box-sizing: border-box;
+  }
+  
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+  
+  /* App Layout */
+  .app-container {
     display: flex;
+    flex-direction: column;
     height: 100vh;
     overflow: hidden;
-}
-
-.sidebar {
-    width: 40%;
-    transition: width 0.3s ease;
-    overflow-y: auto;
-    border-right: 1px solid var(--border-color);
-    background-color: var(--background-color);
-    position: relative;
-}
-
-.sidebar.collapsed {
-    width: 0;
-}
-
-.content-area {
-    flex-grow: 1;
-    width: 70%;
-    transition: width 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.content-area.expanded {
+  }
+  
+  .sidebar {
     width: 100%;
-}
-
-.toggle-sidebar {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    padding: 5px;
-    background-color: var(--button-primary);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-}
-
-.toggle-sidebar:hover {
-    opacity: 1;
-}
-
-/* Note Editor Layout */
-.note-editor {
-    display: flex;
-    flex-direction: column;
     height: 100%;
-    padding: 20px;
-    overflow-y: auto;
-    background-color: var(--card-background);
-}
-
-.note-editor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.note-editor-content {
-    flex-grow: 1;
-    display: flex;
-    gap: 20px;
-}
-
-.note-textarea-container {
-    flex-grow: 1;
-    transition: width 0.3s ease;
-}
-
-.note-metadata {
-    width: 250px;
-    transition: width 0.3s ease, opacity 0.3s ease;
-    padding: 15px;
-    border-left: 1px solid var(--border-color);
-    background-color: var(--card-background);
-}
-
-.note-metadata.collapsed {
-    width: 0;
-    padding: 0;
-    opacity: 0;
-    overflow: hidden;
-}
-
-.note-editor-textarea {
-    width: 100%;
-    height: calc(100vh - 180px);
-    resize: none;
-    padding: 15px;
-    font-size: 1.1em;
-    line-height: 1.6;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--card-background);
-    color: var(--text-color);
-    transition: all 0.3s ease;
-}
-
-.note-editor-textarea:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.note-actions-bar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-top: 1px solid var(--border-color);
-    margin-top: 15px;
-}
-
-.toggle-metadata {
-    background: transparent;
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.toggle-metadata:hover {
-    background-color: var(--hover-color);
-}
-
-/* Animation for sidebar toggle button that stays visible */
-.sidebar-toggle-fixed {
     position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    background-color: var(--background-color);
+    transform: translateX(-100%); /* Hide by default on mobile */
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    overscroll-behavior: touch; /* Standard version */
+    box-shadow: 2px 0 5px var(--shadow-color);
+  }
+  
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  
+  .content-area {
+    width: 100%;
+    height: 100vh;
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .content-area.sidebar-active {
+    transform: translateX(85%); /* Push content when sidebar is active */
+  }
+  
+  /* Sidebar toggle button */
+  .sidebar-toggle {
+    position: fixed;
+    top: 10px;
     left: 10px;
-    top: 70px;
-    z-index: 100;
-    padding: 8px;
+    z-index: 1100;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: var(--button-primary);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    border: none;
     box-shadow: 0 2px 5px var(--shadow-color);
-    transition: left 0.3s ease, transform 0.3s ease;
-}
-
-.sidebar-toggle-fixed.sidebar-open {
-    left: calc(40% - 20px);
-}
-
-/* Animation and transitions */
-.fade-in {
-    animation: fadeIn 0.3s ease forwards;
-}
-
-.fade-out {
-    animation: fadeOut 0.3s ease forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        position: absolute;
-        z-index: 50;
-        height: 100vh;
-    }
-    
-    .content-area {
-        width: 100%;
-    }
-    
-    .note-metadata {
-        position: absolute;
-        right: 0;
-        height: 100%;
-        z-index: 40;
-    }
-    
-    .sidebar-toggle-fixed.sidebar-open {
-        left: calc(100% - 50px);
-    }
-}
-
-/* Toast notification */
-#toast {
-    opacity: 0;
-}
-
-/* Hidden class */
-.hidden {
-    display: none !important;
-}
-
-/* Welcome screen */
-.welcome-screen {
+    cursor: pointer;
+  }
+  
+  /* Note list items */
+  .note {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+  }
+  
+  .note-title strong {
+    font-size: 1.05em;
+    word-break: break-word;
+  }
+  
+  .note-preview {
+    color: var(--secondary-text-color);
+    font-size: 0.9em;
+    margin-top: 5px;
+    max-height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre-line;
+    word-break: break-word;
+  }
+  
+  .note-actions {
     display: flex;
+    margin-top: 10px;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  /* Note Editor */
+  .note-editor {
+    display: flex;
+    flex-direction: column;
     height: 100%;
-    justify-content: center;
+    padding: 15px;
+    background-color: var(--card-background);
+  }
+  
+  .note-editor-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    text-align: center;
-    background-color: var(--background-color);
-    color: var(--text-color);
-}
-
-.welcome-content {
-    max-width: 600px;
-    padding: 20px;
-}
-
-/* Form control styles */
-.form-control {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .note-editor-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .note-textarea-container {
+    flex-grow: 1;
+    position: relative;
+  }
+  
+  .note-editor-textarea {
     width: 100%;
-    padding: 8px;
+    height: calc(100vh - 180px);
+    resize: none;
+    padding: 15px;
+    font-size: 1em;
+    line-height: 1.6;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    appearance: none; /* Standard version */
+  }
+  
+  .note-editor-textarea:focus {
+    outline: none;
+    border-color: var(--button-primary);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  }
+  
+  /* Note metadata */
+  .note-metadata {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 85%;
+    height: 100%;
+    z-index: 900;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    padding: 15px;
+    border-left: 1px solid var(--border-color);
+    background-color: var(--card-background);
+    overflow-y: auto;
+    overscroll-behavior: touch;
+    box-shadow: -2px 0 5px var(--shadow-color);
+  }
+  
+  .note-metadata.active {
+    transform: translateX(0);
+  }
+  
+  .metadata-toggle {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .metadata-toggle:hover {
+    background-color: var(--hover-color);
+  }
+  
+  /* Form elements */
+  .form-control {
+    width: 100%;
+    padding: 10px;
     margin-top: 5px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background-color: var(--card-background);
     color: var(--text-color);
-}
-
-.info-text {
-    margin-top: 5px;
-    padding: 8px;
-    background-color: var(--hover-color);
+    font-size: 16px; /* Prevent zoom on iOS */
+    appearance: none;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 8px 15px;
     border-radius: 4px;
-}
-
-/* Sidebar and Split View Styles */
-#sidebar.collapsed {
-    width: 0;
-    min-width: 0;
-    overflow: hidden;
-}
-
-#contentArea.expanded {
-    margin-left: 0;
-    width: 100%;
-}
-
-#sidebarToggle {
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+    touch-action: manipulation;
+  }
+  
+  .btn-primary {
+    background-color: var(--button-primary);
+    color: white;
+  }
+  
+  .btn-secondary {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+  }
+  
+  .btn-danger {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  /* Modal for adding/editing notes */
+  .modal {
     position: fixed;
-    top: 70px;
+    top: 0;
     left: 0;
-    z-index: 100;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
+  }
+  
+  .modal.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .modal-content {
+    width: 95%;
+    max-width: 500px;
+    max-height: 90vh;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    overflow-y: auto;
+    padding: 20px;
+    overscroll-behavior: touch;
+    transform: scale(0.9);
+    transition: transform 0.3s;
+  }
+  
+  .modal.active .modal-content {
+    transform: scale(1);
+  }
+  
+  #noteContentInput, #noteContent {
+    min-height: 200px;
+    padding: 12px;
+    line-height: 1.5;
+    font-size: 16px;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    resize: none;
+    appearance: none;
+  }
+  
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background-color: var(--accent-color);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    z-index: 2500;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  
+  .toast.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  
+  /* Search results */
+  .search-result {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .result-info {
+    flex: 1;
+    margin-bottom: 10px;
+  }
+  
+  .result-title {
+    font-weight: bold;
+    margin-bottom: 3px;
+    word-break: break-word;
+  }
+  
+  .result-folder {
+    color: var(--secondary-text-color);
+    font-size: 0.9em;
+  }
+  
+  .result-open-btn {
+    align-self: flex-end;
+    padding: 5px 10px;
     background-color: var(--accent-color);
     color: white;
     border: none;
-    border-radius: 0 4px 4px 0;
-    padding: 10px;
-    cursor: pointer;
-    transition: left 0.3s ease;
-}
-
-#sidebarToggle.sidebar-open {
-    left: 250px;
-}
-
-/* Metadata panel */
-#noteMetadata {
-    width: 250px;
-    padding: 15px;
-    background-color: var(--card-background);
-    border-left: 1px solid var(--border-color);
-    transition: width 0.3s ease;
-}
-
-#noteMetadata.collapsed {
-    width: 0;
-    padding: 0;
-    overflow: hidden;
-}
-
-/* Note editor */
-#noteEditor {
-    display: flex;
-    height: 100%;
-    flex-direction: column;
-}
-
-.editor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.editor-body {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.editor-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-#noteEditorTextarea {
-    flex: 1;
-    padding: 15px;
-    border: none;
-    resize: none;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    font-family: inherit;
-    font-size: 16px;
-    line-height: 1.5;
-}
-
-.editor-actions {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    border-top: 1px solid var(--border-color);
-}
-
-.metadata-field {
-    margin-bottom: 15px;
-}
-
-.metadata-field label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-.metadata-dates {
-    margin-top: 20px;
-    font-size: 0.9em;
-    color: var(--secondary-text-color);
-}
-
-.search-result {
-    padding: 10px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.result-info {
-    flex: 1;
-    min-width: 0; /* Prevents text from pushing button off screen */
-    margin-right: 10px;
-}
-
-.result-title {
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.result-folder {
-    color: #888;
-    font-size: 0.9em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.result-open-btn {
-    flex-shrink: 0; /* Prevents button from shrinking */
-    padding: 5px 10px;
-    background-color: var(--accent-color, #4CAF50);
-    color: white;
-    border: none;
     border-radius: 4px;
     cursor: pointer;
-}
-.sidebar {
-    transition: transform 0.3s ease, margin-left 0.3s ease;
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 300px; /* Adjust this to your sidebar width */
-    z-index: 50;
-    overflow-y: auto;
-}
-
-.sidebar.collapsed {
-    transform: translateX(-100%);
-    margin-left: -300px; /* Should match sidebar width */
-}
-
-#contentArea {
-    transition: width 0.3s ease, margin-left 0.3s ease;
-    margin-left: 300px; /* Should match sidebar width */
-    width: calc(100% - 300px);
-}
-
-#contentArea.expanded {
-    width: 100%;
-    margin-left: 0;
-}
-
-.sidebar-toggle-fixed {
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: var(--accent-color, #4CAF50);
-    color: white;
-    padding: 10px;
-    border-radius: 0 4px 4px 0;
-    cursor: pointer;
-    transition: left 0.3s ease;
-}
-
-/* When sidebar is expanded, move toggle button to edge of sidebar */
-.sidebar:not(.collapsed) + .sidebar-toggle-fixed {
-    left: 300px; /* Should match sidebar width */
-}
-
-.collapsed {
-    width: 0;
-    padding: 0;
-    overflow: hidden;
-    border-left: none;
+  }
+  
+  /* Welcome screen */
+  .welcome-screen {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .welcome-content {
+    max-width: 90%;
+  }
+  
+  /* Utilities */
+  .hidden {
+    display: none !important;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.3s ease forwards;
+  }
+  
+  .fade-out {
+    animation: fadeOut 0.3s ease forwards;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  
+  /* Media Queries for larger screens */
+  @media (min-width: 768px) {
+    .app-container {
+      flex-direction: row;
+    }
+    
+    .sidebar {
+      position: relative;
+      width: 300px;
+      transform: none;
+      box-shadow: none;
+      border-right: 1px solid var(--border-color);
+    }
+    
+    .sidebar.collapsed {
+      width: 0;
+      transform: none;
+    }
+    
+    .content-area {
+      width: calc(100% - 300px);
+      transform: none;
+    }
+    
+    .content-area.sidebar-active {
+      transform: none;
+    }
+    
+    .content-area.expanded {
+      width: 100%;
+    }
+    
+    .sidebar-toggle {
+      left: 310px;
+      top: 10px;
+    }
+    
+    .sidebar.collapsed + .sidebar-toggle {
+      left: 10px;
+    }
+    
+    .note-metadata {
+      position: static;
+      width: 250px;
+      transform: none;
+      box-shadow: none;
+      height: auto;
+    }
+    
+    .note-editor-content {
+      flex-direction: row;
+      gap: 20px;
+    }
+    
+    .note-metadata.collapsed {
+      width: 0;
+      padding: 0;
+      overflow: hidden;
+      border-left: none;
+    }
+    
+    .search-result {
+      flex-direction: row;
+      align-items: center;
+    }
+    
+    .result-info {
+      margin-bottom: 0;
+      margin-right: 10px;
+    }
+  }
+  
+  /* High-resolution displays */
+  @media (min-width: 1200px) {
+    .sidebar {
+      width: 350px;
+    }
+    
+    .content-area {
+      width: calc(100% - 350px);
+    }
+    
+    .sidebar-toggle {
+      left: 360px;
+    }
+    
+    .note-metadata {
+      width: 300px;
+    }
+  }
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background-color: #1e1e1e;
+      --card-background: #252525;
+      --text-color: #e0e0e0;
+      --secondary-text-color: #a0a0a0;
+      --border-color: #444444;
+      --hover-color: #333333;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+  }
+  
+  /* Fix for iOS input issues */
+  input, textarea {
+    appearance: none;
+    border-radius: 4px;
+  }
+  
+  /* Fix for notched displays */
+  @supports (padding: max(0px)) {
+    .sidebar, .content-area, .note-metadata {
+      padding-left: max(15px, env(safe-area-inset-left));
+      padding-right: max(15px, env(safe-area-inset-right));
+    }
+    
+    .sidebar-toggle {
+      left: max(10px, env(safe-area-inset-left));
+    }
+    
+    .sidebar:not(.collapsed) + .sidebar-toggle {
+      left: calc(300px + max(10px, env(safe-area-inset-left)));
+    }
+  }
+  
+  /* Cross-browser smooth scrolling */
+  @supports (scrollbar-width: thin) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--secondary-text-color) transparent;
+    }
+  }
+  
+  /* For browsers that support it */
+  .smooth-scroll {
+    scroll-behavior: smooth;
   }
 
-  .note-metadata.collapsed {
-    width: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    border-left: none !important;
-    transition: width 0.3s ease, padding 0.3s ease;
-}

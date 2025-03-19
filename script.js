@@ -1,7 +1,7 @@
 // Daily Planner with Local Storage - Enhanced with all features
 
 document.addEventListener("DOMContentLoaded", () => {
-    initializePlanner();
+  initializePlanner();
 });
 
 let plannerData = JSON.parse(localStorage.getItem("dailyPlanner")) || {};
@@ -18,1159 +18,959 @@ let currentlyEditingNote = null;
 
 // Initialize planner
 function initializePlanner() {
-    loadProgress();
-    setupEventListeners();
-    setupSearchFunctionality();
-    applyColorTheme();
-    setupSplitViewListeners();
+  loadProgress();
+  setupEventListeners();
+  setupSearchFunctionality();
+  applyColorTheme();
+  setupSplitViewListeners();
+  setupNoteEditorListeners(); // Ensure note editor listeners are set up
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    document.getElementById("addFolderBtn").addEventListener("click", addFolder);
-    document.getElementById("darkModeToggle").addEventListener("click", toggleDarkMode);
-    document.getElementById("searchInput").addEventListener("input", performSearch);
-    document.getElementById("clearSearchBtn").addEventListener("click", clearSearch);
-    document.getElementById("confirmAddNoteBtn").addEventListener("click", confirmAddNote);
+  document.getElementById("addFolderBtn")?.addEventListener("click", addFolder);
+  document.getElementById("darkModeToggle")?.addEventListener("click", toggleDarkMode);
+  document.getElementById("searchInput")?.addEventListener("input", performSearch);
+  document.getElementById("clearSearchBtn")?.addEventListener("click", clearSearch);
+  document.getElementById("confirmAddNoteBtn")?.addEventListener("click", confirmAddNote);
+  
+  // Add modal confirmation button listeners
+  document.getElementById("confirmAddFolderBtn")?.addEventListener("click", confirmAddFolder);
+  document.getElementById("closeFolderBtn")?.addEventListener("click", closeFolderModal);
+  document.getElementById("confirmRenameFolderBtn")?.addEventListener("click", confirmRenameFolder);
+  document.getElementById("closeRenameFolderBtn")?.addEventListener("click", closeRenameFolderModal);
+  document.getElementById("confirmDeleteFolderBtn")?.addEventListener("click", confirmDeleteFolder);
+  document.getElementById("closeDeleteFolderBtn")?.addEventListener("click", closeDeleteFolderModal);
+  document.getElementById("confirmDeleteNoteBtn")?.addEventListener("click", confirmDeleteNote);
+  document.getElementById("closeDeleteNoteBtn")?.addEventListener("click", closeDeleteNoteModal);
 }
 
-function setupSplitViewListeners() {
-    // Sidebar toggle
-    document.getElementById("sidebarToggle").addEventListener("click", toggleSidebar);
+function setupNoteEditorListeners() {
+  document.getElementById("closeEditorBtn")?.addEventListener("click", closeNoteEditor);
+  document.getElementById("saveNoteBtn")?.addEventListener("click", saveNoteFromEditor);
+  document.getElementById("editorDeleteNote")?.addEventListener("click", deleteNoteFromEditor);
+}
+
+function closeNoteEditor() {
+  document.getElementById("noteEditor").classList.add("hidden");
+  document.getElementById("welcomeScreen").classList.remove("hidden");
+  
+  // Reset current editing note
+  currentlyEditingNote = null;
+}
+
+function saveNoteFromEditor() {
+  if (!currentlyEditingNote || !currentlyEditingNote.folder || !currentlyEditingNote.note) {
+    const currentNoteId = document.getElementById("noteEditor").dataset.noteId;
+    const folderId = document.getElementById("noteEditor").dataset.folderId;
     
-    // Metadata panel toggle
-    document.getElementById("toggleMetadata").addEventListener("click", toggleMetadataPanel);
+    if (!currentNoteId || !folderId) {
+      console.error("Missing note ID or folder ID");
+      return;
+    }
     
-    // Save button in editor
-    document.getElementById("saveNoteBtn").addEventListener("click", saveNoteFromEditor);
+    // Continue with original implementation for compatibility
+    const folder = folders.find(f => f.id === folderId);
+    if (folder) {
+      const noteIndex = folder.notes.findIndex(n => n.id === currentNoteId);
+      if (noteIndex !== -1) {
+        const content = document.getElementById("noteEditorTextarea").value;
+        const priority = document.getElementById("editorNotePriority").value;
+        const dueDate = document.getElementById("editorNoteDueDate").value;
+        const status = document.getElementById("editorNoteStatus").value;
+        
+        folder.notes[noteIndex].content = content;
+        folder.notes[noteIndex].priority = priority;
+        folder.notes[noteIndex].dueDate = dueDate;
+        folder.notes[noteIndex].status = status;
+        folder.notes[noteIndex].lastModified = new Date().toISOString();
+        
+        saveFolders();
+        renderFolders();
+      }
+    }
+    return;
+  }
+  
+  // Using the currentlyEditingNote object to save changes
+  const folder = currentlyEditingNote.folder;
+  const note = currentlyEditingNote.note;
+  
+  // Get updated values
+  const content = document.getElementById("noteEditorTextarea").value;
+  const priority = document.getElementById("editorNotePriority").value;
+  const dueDate = document.getElementById("editorNoteDueDate").value;
+  const completed = document.getElementById("editorNoteStatus").value === "completed";
+  
+  // Update note data
+  plannerData[folder].notes[note].content = content;
+  plannerData[folder].notes[note].priority = priority;
+  plannerData[folder].notes[note].dueDate = dueDate;
+  plannerData[folder].notes[note].completed = completed;
+  plannerData[folder].notes[note].modifiedAt = new Date().toISOString();
+  
+  // Save changes
+  saveProgress();
+  
+  // Update last modified date in UI
+  const modifiedDate = new Date();
+  document.getElementById("noteModifiedDate").innerText = modifiedDate.toLocaleString();
+  
+  // Show success message
+  showToast("Note saved successfully");
+  
+  // Refresh notes in the sidebar
+  const notesContainerId = `notes-${folder.replace(/\s+/g, '-')}`;
+  loadNotes(folder, notesContainerId);
+}
+
+function deleteNoteFromEditor() {
+  if (currentlyEditingNote && currentlyEditingNote.folder && currentlyEditingNote.note) {
+    // Show delete confirmation modal with correct note
+    showDeleteNoteModal(currentlyEditingNote.folder, currentlyEditingNote.note);
+  } else {
+    const currentNoteId = document.getElementById("noteEditor").dataset.noteId;
+    const folderId = document.getElementById("noteEditor").dataset.folderId;
     
-    // Close editor button
-    document.getElementById("closeEditorBtn").addEventListener("click", closeNoteEditor);
-    
-    // Delete note from editor
-    document.getElementById("editorDeleteNote").addEventListener("click", function() {
-        if (currentlyEditingNote && currentlyEditingNote.folder && currentlyEditingNote.note) {
-            showDeleteNoteModal(currentlyEditingNote.folder, currentlyEditingNote.note);
+    if (currentNoteId && folderId) {
+      const folder = folders.find(f => f.id === folderId);
+      if (folder) {
+        const note = folder.notes.find(n => n.id === currentNoteId);
+        if (note) {
+          document.getElementById("deleteNoteName").textContent = note.title;
+          document.getElementById("deleteNoteModal").dataset.noteId = currentNoteId;
+          document.getElementById("deleteNoteModal").dataset.folderId = folderId;
+          document.getElementById("deleteNoteModal").style.display = "flex";
         }
-    });
+      }
+    }
+  }
+}
+
+function confirmDeleteNote() {
+  // Check if we're using the old or new data structure
+  const noteId = document.getElementById("deleteNoteModal").dataset.noteId;
+  const folderId = document.getElementById("deleteNoteModal").dataset.folderId;
+  
+  if (noteId && folderId) {
+    // Using newer data structure
+    const folder = folders.find(f => f.id === folderId);
+    if (folder) {
+      folder.notes = folder.notes.filter(n => n.id !== noteId);
+      saveFolders();
+      renderFolders();
+    }
+  } else if (folderToDelete && noteToDelete) {
+    // Using older data structure
+    delete plannerData[folderToDelete].notes[noteToDelete];
+    saveProgress();
+    const notesContainerId = `notes-${folderToDelete.replace(/\s+/g, '-')}`;
+    loadNotes(folderToDelete, notesContainerId);
+    
+    // If we're deleting the currently open note, close the editor
+    if (currentlyEditingNote && 
+        currentlyEditingNote.folder === folderToDelete && 
+        currentlyEditingNote.note === noteToDelete) {
+      closeNoteEditor();
+    }
+  }
+  
+  closeDeleteNoteModal();
+}
+
+function openNoteInEditor(noteId, folderId) {
+  const folder = folders.find(f => f.id === folderId);
+  if (!folder) return;
+  
+  const note = folder.notes.find(n => n.id === noteId);
+  if (!note) return;
+  
+  document.getElementById("editorNoteTitle").textContent = note.title;
+  document.getElementById("noteEditorTextarea").value = note.content;
+  document.getElementById("editorNotePriority").value = note.priority;
+  document.getElementById("editorNoteDueDate").value = note.dueDate || "";
+  document.getElementById("editorNoteStatus").value = note.status || "active";
+  document.getElementById("noteCreatedDate").textContent = formatDate(note.created);
+  document.getElementById("noteModifiedDate").textContent = formatDate(note.lastModified);
+  
+  document.getElementById("noteEditor").dataset.noteId = noteId;
+  document.getElementById("noteEditor").dataset.folderId = folderId;
+  
+  document.getElementById("welcomeScreen").classList.add("hidden");
+  document.getElementById("noteEditor").classList.remove("hidden");
+}
+
+
+function setupSplitViewListeners() {
+  // Sidebar toggle
+  document.getElementById("sidebarToggle")?.addEventListener("click", toggleSidebar);
+  
+  // Metadata panel toggle
+  document.getElementById("toggleMetadata")?.addEventListener("click", toggleMetadataPanel);
+  
+  // Delete note from editor
+  document.getElementById("editorDeleteNote")?.addEventListener("click", function() {
+      if (currentlyEditingNote && currentlyEditingNote.folder && currentlyEditingNote.note) {
+          showDeleteNoteModal(currentlyEditingNote.folder, currentlyEditingNote.note);
+      }
+  });
 }
 
 // Setup search functionality
 function setupSearchFunctionality() {
-    const searchContainer = document.getElementById("searchContainer");
+  const searchContainer = document.getElementById("searchContainer");
+  if (searchContainer) {
     searchContainer.classList.remove("hidden");
+  }
 }
 
 // Toggle dark mode
 function toggleDarkMode() {
-    isDarkMode = !isDarkMode;
-    localStorage.setItem("darkMode", isDarkMode);
-    applyColorTheme();
+  isDarkMode = !isDarkMode;
+  localStorage.setItem("darkMode", isDarkMode);
+  applyColorTheme();
 }
 
 // Apply color theme based on dark mode state
 function applyColorTheme() {
-    document.body.classList.toggle("dark-mode", isDarkMode);
-    document.getElementById("darkModeToggle").textContent = isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode";
+  document.body.classList.toggle("dark-mode", isDarkMode);
+  const darkModeToggle = document.getElementById("darkModeToggle");
+  if (darkModeToggle) {
+    darkModeToggle.textContent = isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode";
+  }
 }
 
 function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const contentArea = document.getElementById("contentArea");
-    const toggleIcon = document.getElementById("sidebarToggleIcon");
-    
-    isSidebarCollapsed = !isSidebarCollapsed;
-    
-    if (isSidebarCollapsed) {
-        // Collapse sidebar
-        sidebar.style.transform = "translateX(-100%)";
-        sidebar.style.marginLeft = "-300px"; // Assuming sidebar width is 300px max
-        if (contentArea) {
-            contentArea.style.width = "100%";
-            contentArea.style.marginLeft = "0";
-        }
+  const sidebar = document.getElementById("sidebar");
+  const contentArea = document.getElementById("contentArea");
+  const toggleIcon = document.getElementById("sidebarToggleIcon");
+  
+  if (!sidebar) return;
+  
+  isSidebarCollapsed = !isSidebarCollapsed;
+  
+  if (isSidebarCollapsed) {
+      // Collapse sidebar
+      sidebar.style.transform = "translateX(-100%)";
+      sidebar.style.marginLeft = "-300px"; // Assuming sidebar width is 300px max
+      if (contentArea) {
+          contentArea.style.width = "100%";
+          contentArea.style.marginLeft = "0";
+      }
+      if (toggleIcon) {
         toggleIcon.innerText = "▶";
-    } else {
-        // Expand sidebar
-        sidebar.style.transform = "translateX(0)";
-        sidebar.style.marginLeft = "0";
-        if (contentArea) {
-            contentArea.style.width = "calc(100% - 300px)"; // Adjust based on sidebar width
-            contentArea.style.marginLeft = "300px"; // Same as sidebar width
-        }
+      }
+  } else {
+      // Expand sidebar
+      sidebar.style.transform = "translateX(0)";
+      sidebar.style.marginLeft = "0";
+      if (contentArea) {
+          contentArea.style.width = "calc(100% - 300px)"; // Adjust based on sidebar width
+          contentArea.style.marginLeft = "300px"; // Same as sidebar width
+      }
+      if (toggleIcon) {
         toggleIcon.innerText = "◀";
-    }
-    
-    // Toggle classes for additional styling
-    sidebar.classList.toggle("collapsed", isSidebarCollapsed);
-    if (contentArea) {
-        contentArea.classList.toggle("expanded", isSidebarCollapsed);
-    }
+      }
+  }
+  
+  // Toggle classes for additional styling
+  sidebar.classList.toggle("collapsed", isSidebarCollapsed);
+  if (contentArea) {
+      contentArea.classList.toggle("expanded", isSidebarCollapsed);
+  }
 }
 
 // Toggle metadata panel
 function toggleMetadataPanel() {
-    const metadataPanel = document.getElementById("noteMetadata");
-    const toggleBtn = document.getElementById("toggleMetadata");
-    
-    isMetadataPanelCollapsed = !isMetadataPanelCollapsed;
-    
-    metadataPanel.classList.toggle("collapsed", isMetadataPanelCollapsed);
-    toggleBtn.innerText = isMetadataPanelCollapsed ? "▶ Show Details" : "◀ Hide Details";
+  const metadataPanel = document.getElementById("noteMetadata");
+  const toggleBtn = document.getElementById("toggleMetadata");
+  
+  if (!metadataPanel || !toggleBtn) return;
+  
+  isMetadataPanelCollapsed = !isMetadataPanelCollapsed;
+  
+  metadataPanel.classList.toggle("collapsed", isMetadataPanelCollapsed);
+  toggleBtn.innerText = isMetadataPanelCollapsed ? "▶ Show Details" : "◀ Hide Details";
 }
 
 // Function to save data
 function saveProgress() {
-    localStorage.setItem("dailyPlanner", JSON.stringify(plannerData));
+  localStorage.setItem("dailyPlanner", JSON.stringify(plannerData));
 }
 
 // Function to load saved data
 function loadProgress() {
-    const folderContainer = document.getElementById("folders");
-    folderContainer.innerHTML = "";
-    Object.keys(plannerData).forEach(folder => {
-        addFolderToUI(folder);
-    });
+  const folderContainer = document.getElementById("folders");
+  if (!folderContainer) return;
+  
+  folderContainer.innerHTML = "";
+  Object.keys(plannerData).forEach(folder => {
+      addFolderToUI(folder);
+  });
 }
 
 // Function to add a new folder
 function addFolder() {
-    document.getElementById("folderModal").style.display = "flex";
-    document.getElementById("folderColorInput").value = "#4CAF50"; // Default color
+  const folderModal = document.getElementById("folderModal");
+  const folderColorInput = document.getElementById("folderColorInput");
+  
+  if (!folderModal || !folderColorInput) return;
+  
+  folderModal.style.display = "flex";
+  folderColorInput.value = "#4CAF50"; // Default color
 }
 
 function confirmAddFolder() {
-    let folderName = document.getElementById("folderInput").value.trim();
-    let folderColor = document.getElementById("folderColorInput").value;
-    
-    if (folderName && !plannerData[folderName]) {
-        plannerData[folderName] = {
-            notes: {},
-            color: folderColor
-        };
-        saveProgress();
-        addFolderToUI(folderName);
-    }
-    closeFolderModal();
+  let folderName = document.getElementById("folderInput")?.value.trim();
+  let folderColor = document.getElementById("folderColorInput")?.value;
+  
+  if (!folderName || !folderColor) return;
+  
+  if (folderName && !plannerData[folderName]) {
+      plannerData[folderName] = {
+          notes: {},
+          color: folderColor
+      };
+      saveProgress();
+      addFolderToUI(folderName);
+  }
+  closeFolderModal();
 }
 
 function closeFolderModal() {
-    document.getElementById("folderModal").style.display = "none";
-    document.getElementById("folderInput").value = "";
+  const folderModal = document.getElementById("folderModal");
+  const folderInput = document.getElementById("folderInput");
+  
+  if (!folderModal) return;
+  
+  folderModal.style.display = "none";
+  if (folderInput) {
+    folderInput.value = "";
+  }
 }
 
 // Function to add folder UI
 function addFolderToUI(folderName) {
-    const folderContainer = document.getElementById("folders");
-    const folderDiv = document.createElement("div");
-    folderDiv.classList.add("folder");
-    folderDiv.dataset.folderName = folderName;
-    
-    // Get folder color
-    const folderColor = plannerData[folderName].color || "#4CAF50";
-    
-    folderDiv.innerHTML = `
-        <div class="folder-header" style="border-left: 5px solid ${folderColor}">
-            <strong>${folderName}</strong>
-            <div class="folder-actions">
-                <button class="icon-btn" onclick="renameFolder('${folderName}')">✏️</button>
-                <button class="icon-btn" onclick="showDeleteFolderModal('${folderName}')">🗑️</button>
-                <button class="open-btn" style="background-color: ${folderColor}" onclick="openFolder('${folderName}')">📂 Open</button>
-            </div>
-        </div>
-        <div class="folder-content hidden">
-            <div class="notes-container" id="notes-${folderName.replace(/\s+/g, '-')}"></div>
-            <button class="create-note-btn" style="background-color: ${folderColor}" onclick="addNote('${folderName}')">➕ Create Note</button>
-        </div>
-    `;
-    
-    folderContainer.appendChild(folderDiv);
+  const folderContainer = document.getElementById("folders");
+  if (!folderContainer) return;
+  
+  const folderDiv = document.createElement("div");
+  folderDiv.classList.add("folder");
+  folderDiv.dataset.folderName = folderName;
+  
+  // Get folder color
+  const folderColor = plannerData[folderName].color || "#4CAF50";
+  
+  folderDiv.innerHTML = `
+      <div class="folder-header" style="border-left: 5px solid ${folderColor}">
+          <strong>${folderName}</strong>
+          <div class="folder-actions">
+              <button class="icon-btn" onclick="renameFolder('${folderName}')">✏️</button>
+              <button class="icon-btn" onclick="showDeleteFolderModal('${folderName}')">🗑️</button>
+              <button class="open-btn" style="background-color: ${folderColor}" onclick="openFolder('${folderName}')">📂 Open</button>
+          </div>
+      </div>
+      <div class="folder-content hidden">
+          <div class="notes-container" id="notes-${folderName.replace(/\s+/g, '-')}"></div>
+          <button class="create-note-btn" style="background-color: ${folderColor}" onclick="addNote('${folderName}')">➕ Create Note</button>
+      </div>
+  `;
+  
+  folderContainer.appendChild(folderDiv);
 }
 
 // Function to open a folder with animations
 function openFolder(folderName) {
-    activeFolder = folderName;
-    
-    // Get the folder container by data attribute
-    const folderDiv = document.querySelector(`.folder[data-folder-name="${folderName}"]`);
-    if (!folderDiv) return;
-    
-    const folderContent = folderDiv.querySelector('.folder-content');
-    const openBtn = folderDiv.querySelector('.open-btn');
-    
-    if (folderContent.classList.contains('hidden')) {
-        // Opening the folder
-        folderContent.classList.remove('hidden');
-        openBtn.textContent = "📂 Close";
-        openBtn.classList.add('open');
-        
-        // Load notes for this folder
-        const notesContainerId = `notes-${folderName.replace(/\s+/g, '-')}`;
-        loadNotes(folderName, notesContainerId);
-    } else {
-        // Closing the folder
-        folderContent.classList.add('hidden');
-        openBtn.textContent = "📂 Open";
-        openBtn.classList.remove('open');
-    }
+  activeFolder = folderName;
+  
+  // Get the folder container by data attribute
+  const folderDiv = document.querySelector(`.folder[data-folder-name="${folderName}"]`);
+  if (!folderDiv) return;
+  
+  const folderContent = folderDiv.querySelector('.folder-content');
+  const openBtn = folderDiv.querySelector('.open-btn');
+  
+  if (!folderContent || !openBtn) return;
+  
+  if (folderContent.classList.contains('hidden')) {
+      // Opening the folder
+      folderContent.classList.remove('hidden');
+      openBtn.textContent = "📂 Close";
+      openBtn.classList.add('open');
+      
+      // Load notes for this folder
+      const notesContainerId = `notes-${folderName.replace(/\s+/g, '-')}`;
+      loadNotes(folderName, notesContainerId);
+  } else {
+      // Closing the folder
+      folderContent.classList.add('hidden');
+      openBtn.textContent = "📂 Open";
+      openBtn.classList.remove('open');
+  }
 }
 
 // Function to load notes inside a folder
 function loadNotes(folderName, containerId) {
-    const notesContainer = document.getElementById(containerId);
-    if (!notesContainer) return;
-    
-    notesContainer.innerHTML = "";
-    
-    if (plannerData[folderName] && plannerData[folderName].notes) {
-        Object.keys(plannerData[folderName].notes).forEach(noteName => {
-            addNoteToUI(folderName, noteName, notesContainer);
-        });
-    }
+  const notesContainer = document.getElementById(containerId);
+  if (!notesContainer) return;
+  
+  notesContainer.innerHTML = "";
+  
+  if (plannerData[folderName] && plannerData[folderName].notes) {
+      Object.keys(plannerData[folderName].notes).forEach(noteName => {
+          addNoteToUI(folderName, noteName, notesContainer);
+      });
+  }
 }
 
 // Function to add a new note
 function addNote(folderName) {
-    activeFolder = folderName;
-    document.getElementById("noteModal").style.display = "flex";
-    
-    // Set default values
-    document.getElementById("notePriority").value = "medium";
-    
-    // Set due date to tomorrow by default
+  activeFolder = folderName;
+  const noteModal = document.getElementById("noteModal");
+  const notePriority = document.getElementById("notePriority");
+  const noteDueDate = document.getElementById("noteDueDate");
+  const noteContentInput = document.getElementById("noteContentInput");
+  
+  if (!noteModal) return;
+  
+  noteModal.style.display = "flex";
+  
+  // Set default values
+  if (notePriority) {
+    notePriority.value = "medium";
+  }
+  
+  // Set due date to tomorrow by default
+  if (noteDueDate) {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById("noteDueDate").valueAsDate = tomorrow;
-    
-    // Focus on the content textarea after a brief delay
+    noteDueDate.valueAsDate = tomorrow;
+  }
+  
+  // Focus on the content textarea after a brief delay
+  if (noteContentInput) {
     setTimeout(() => {
-        document.getElementById("noteContentInput").focus();
+        noteContentInput.focus();
     }, 300);
+  }
 }
 
 function confirmAddNote() {
-    let noteName = document.getElementById("noteInput").value.trim();
-    let noteContent = document.getElementById("noteContentInput").value.trim();
-    let notePriority = document.getElementById("notePriority").value;
-    let noteDueDate = document.getElementById("noteDueDate").value;
-    
-    // Generate a default title if none is provided but content exists
-    if (!noteName && noteContent) {
-        // Use the first line or first few words as the title
-        noteName = noteContent.split('\n')[0].trim().substring(0, 30);
-        if (noteName.length === 30) noteName += '...';
-        if (!noteName) noteName = "Untitled Note";
-    }
-    
-    if (noteName && activeFolder) {
-        if (!plannerData[activeFolder].notes) {
-            plannerData[activeFolder].notes = {};
-        }
-        
-        if (!plannerData[activeFolder].notes[noteName]) {
-            plannerData[activeFolder].notes[noteName] = {
-                content: noteContent,
-                priority: notePriority,
-                dueDate: noteDueDate,
-                completed: false,
-                createdAt: new Date().toISOString()
-            };
-            
-            saveProgress();
-            const notesContainerId = `notes-${activeFolder.replace(/\s+/g, '-')}`;
-            loadNotes(activeFolder, notesContainerId);
-        }
-    }
-    closeNoteModal();
+  const noteInput = document.getElementById("noteInput");
+  const noteContentInput = document.getElementById("noteContentInput");
+  const notePriority = document.getElementById("notePriority");
+  const noteDueDate = document.getElementById("noteDueDate");
+  
+  if (!noteInput || !noteContentInput || !notePriority || !noteDueDate) return;
+  
+  let noteName = noteInput.value.trim();
+  let noteContent = noteContentInput.value.trim();
+  let notePriorityValue = notePriority.value;
+  let noteDueDateValue = noteDueDate.value;
+  
+  // Generate a default title if none is provided but content exists
+  if (!noteName && noteContent) {
+      // Use the first line or first few words as the title
+      noteName = noteContent.split('\n')[0].trim().substring(0, 30);
+      if (noteName.length === 30) noteName += '...';
+      if (!noteName) noteName = "Untitled Note";
+  }
+  
+  if (noteName && activeFolder) {
+      if (!plannerData[activeFolder].notes) {
+          plannerData[activeFolder].notes = {};
+      }
+      
+      if (!plannerData[activeFolder].notes[noteName]) {
+          plannerData[activeFolder].notes[noteName] = {
+              content: noteContent,
+              priority: notePriorityValue,
+              dueDate: noteDueDateValue,
+              completed: false,
+              createdAt: new Date().toISOString()
+          };
+          
+          saveProgress();
+          const notesContainerId = `notes-${activeFolder.replace(/\s+/g, '-')}`;
+          loadNotes(activeFolder, notesContainerId);
+          
+          // Show success message
+          showToast("Note created successfully");
+      }
+  }
+  closeNoteModal();
 }
 
 function closeNoteModal() {
-    document.getElementById("noteModal").style.display = "none";
-    document.getElementById("noteInput").value = "";
-    document.getElementById("noteContentInput").value = "";
+  const noteModal = document.getElementById("noteModal");
+  const noteInput = document.getElementById("noteInput");
+  const noteContentInput = document.getElementById("noteContentInput");
+  
+  if (!noteModal) return;
+  
+  noteModal.style.display = "none";
+  
+  if (noteInput) noteInput.value = "";
+  if (noteContentInput) noteContentInput.value = "";
 }
 
 // Function to add note UI
 function addNoteToUI(folderName, noteName, container) {
-    const noteData = plannerData[folderName].notes[noteName];
-    const noteDiv = document.createElement("div");
-    noteDiv.classList.add("note");
-    
-    // Set priority color
-    let priorityColor = "#4CAF50"; // Default green (medium)
-    if (noteData.priority === "high") {
-        priorityColor = "#f44336"; // Red
-    } else if (noteData.priority === "low") {
-        priorityColor = "#2196F3"; // Blue
-    }
-    
-    // Format due date
+  if (!container || !plannerData[folderName] || !plannerData[folderName].notes[noteName]) return;
+  
+  const noteData = plannerData[folderName].notes[noteName];
+  const noteDiv = document.createElement("div");
+  noteDiv.classList.add("note");
+  
+  // Set priority color
+  let priorityColor = "#4CAF50"; // Default green (medium)
+  if (noteData.priority === "high") {
+      priorityColor = "#f44336"; // Red
+  } else if (noteData.priority === "low") {
+      priorityColor = "#2196F3"; // Blue
+  }
+  
+  // Format due date
+  let formattedDate = "";
+  let isOverdue = false;
+  
+  if (noteData.dueDate) {
     const dueDate = new Date(noteData.dueDate);
-    const formattedDate = dueDate.toLocaleDateString();
-    
-    // Check if note is overdue
-    const isOverdue = new Date() > dueDate && !noteData.completed;
-    
-    // Check if note is completed
-    const completedClass = noteData.completed ? "completed" : "";
-    
-    // Create preview of content
-    const contentPreview = noteData.content 
-        ? `<div class="note-preview">${noteData.content.substring(0, 60)}${noteData.content.length > 60 ? '...' : ''}</div>` 
-        : '';
-    
-    noteDiv.innerHTML = `
-        <div class="note-header" style="border-left: 5px solid ${priorityColor}">
-            <div class="note-title ${completedClass} ${isOverdue ? 'overdue' : ''}">
-                <input type="checkbox" ${noteData.completed ? 'checked' : ''} onchange="toggleNoteComplete('${folderName}', '${noteName}')">
-                <strong>${noteName}</strong>
-            </div>
-            ${contentPreview}
-            <div class="note-meta">
-                <span class="due-date" title="Due date">📅 ${formattedDate}</span>
-                <span class="priority" title="Priority: ${noteData.priority}">🚩</span>
-            </div>
-        </div>
-        <div class="note-actions">
-            <button class="icon-btn" onclick="openNote('${folderName}', '${noteName}')">📜 Open</button>
-            <button class="icon-btn" onclick="showDeleteNoteModal('${folderName}', '${noteName}')">🗑️</button>
-        </div>
-    `;
-    
-    container.appendChild(noteDiv);
+    formattedDate = dueDate.toLocaleDateString();
+    isOverdue = new Date() > dueDate && !noteData.completed;
+  }
+  
+  // Check if note is completed
+  const completedClass = noteData.completed ? "completed" : "";
+  
+  // Create preview of content
+  const contentPreview = noteData.content 
+      ? `<div class="note-preview">${noteData.content.substring(0, 60)}${noteData.content.length > 60 ? '...' : ''}</div>` 
+      : '';
+  
+  noteDiv.innerHTML = `
+      <div class="note-header" style="border-left: 5px solid ${priorityColor}">
+          <div class="note-title ${completedClass} ${isOverdue ? 'overdue' : ''}">
+              <input type="checkbox" ${noteData.completed ? 'checked' : ''} onchange="toggleNoteComplete('${folderName}', '${noteName}')">
+              <strong>${noteName}</strong>
+          </div>
+          ${contentPreview}
+          <div class="note-meta">
+              <span class="due-date" title="Due date">📅 ${formattedDate}</span>
+              <span class="priority" title="Priority: ${noteData.priority}">🚩</span>
+          </div>
+      </div>
+      <div class="note-actions">
+          <button class="icon-btn" onclick="openNote('${folderName}', '${noteName}')">📜 Open</button>
+          <button class="icon-btn" onclick="showDeleteNoteModal('${folderName}', '${noteName}')">🗑️</button>
+      </div>
+  `;
+  
+  container.appendChild(noteDiv);
 }
 
 // Toggle note completion status
 function toggleNoteComplete(folderName, noteName) {
-    plannerData[folderName].notes[noteName].completed = !plannerData[folderName].notes[noteName].completed;
-    saveProgress();
-    const notesContainerId = `notes-${folderName.replace(/\s+/g, '-')}`;
-    loadNotes(folderName, notesContainerId);
+  if (!plannerData[folderName] || !plannerData[folderName].notes[noteName]) return;
+  
+  plannerData[folderName].notes[noteName].completed = !plannerData[folderName].notes[noteName].completed;
+  saveProgress();
+  const notesContainerId = `notes-${folderName.replace(/\s+/g, '-')}`;
+  loadNotes(folderName, notesContainerId);
+  
+  // Show a toast notification
+  const status = plannerData[folderName].notes[noteName].completed ? "completed" : "active";
+  showToast(`Note marked as ${status}`);
+}
+
+// Format date helper for consistent date formatting
+function formatDate(dateString) {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  } catch (e) {
+    return "Invalid date";
+  }
 }
 
 // Override the existing openNote function to use our new editor view
 function openNote(folderName, noteName) {
-    activeFolder = folderName;
-    activeNote = noteName;
-    
-    // Get note data
-    const noteData = plannerData[folderName].notes[noteName];
-    
-    // Store current editing note
-    currentlyEditingNote = {
-        folder: folderName,
-        note: noteName,
-        data: noteData
-    };
-    
-    // Update editor UI
-    document.getElementById("editorNoteTitle").innerText = noteName;
-    document.getElementById("noteEditorTextarea").value = noteData.content || "";
-    document.getElementById("editorNotePriority").value = noteData.priority || "medium";
-    document.getElementById("editorNoteDueDate").value = noteData.dueDate || "";
-    document.getElementById("editorNoteStatus").value = noteData.completed ? "completed" : "active";
-    
-    // Format dates
-    const createdDate = new Date(noteData.createdAt);
-    document.getElementById("noteCreatedDate").innerText = createdDate.toLocaleString();
-    
-    const modifiedDate = noteData.modifiedAt ? new Date(noteData.modifiedAt) : createdDate;
-    document.getElementById("noteModifiedDate").innerText = modifiedDate.toLocaleString();
-    
-    // Show editor and hide welcome screen
-    document.getElementById("welcomeScreen").classList.add("hidden");
-    document.getElementById("noteEditor").classList.remove("hidden");
-    
-    // If sidebar is taking too much space on small screens, collapse it
-    if (window.innerWidth < 768) {
-        if (!isSidebarCollapsed) {
-            toggleSidebar();
-        }
-    }
-    
-    // Focus on the content textarea
+  if (!plannerData[folderName] || !plannerData[folderName].notes[noteName]) return;
+  
+  activeFolder = folderName;
+  activeNote = noteName;
+  
+  // Get note data
+  const noteData = plannerData[folderName].notes[noteName];
+  
+  // Store current editing note
+  currentlyEditingNote = {
+      folder: folderName,
+      note: noteName,
+      data: noteData
+  };
+  
+  // Update editor UI
+  const editorNoteTitle = document.getElementById("editorNoteTitle");
+  const noteEditorTextarea = document.getElementById("noteEditorTextarea");
+  const editorNotePriority = document.getElementById("editorNotePriority");
+  const editorNoteDueDate = document.getElementById("editorNoteDueDate");
+  const editorNoteStatus = document.getElementById("editorNoteStatus");
+  const noteCreatedDate = document.getElementById("noteCreatedDate");
+  const noteModifiedDate = document.getElementById("noteModifiedDate");
+  const welcomeScreen = document.getElementById("welcomeScreen");
+  const noteEditor = document.getElementById("noteEditor");
+  
+  if (editorNoteTitle) editorNoteTitle.innerText = noteName;
+  if (noteEditorTextarea) noteEditorTextarea.value = noteData.content || "";
+  if (editorNotePriority) editorNotePriority.value = noteData.priority || "medium";
+  if (editorNoteDueDate) editorNoteDueDate.value = noteData.dueDate || "";
+  if (editorNoteStatus) editorNoteStatus.value = noteData.completed ? "completed" : "active";
+  
+  // Format dates
+  const createdDate = new Date(noteData.createdAt);
+  if (noteCreatedDate) noteCreatedDate.innerText = createdDate.toLocaleString();
+  
+  const modifiedDate = noteData.modifiedAt ? new Date(noteData.modifiedAt) : createdDate;
+  if (noteModifiedDate) noteModifiedDate.innerText = modifiedDate.toLocaleString();
+  
+  // Show editor and hide welcome screen
+  if (welcomeScreen) welcomeScreen.classList.add("hidden");
+  if (noteEditor) noteEditor.classList.remove("hidden");
+  
+  // If sidebar is taking too much space on small screens, collapse it
+  if (window.innerWidth < 768) {
+      if (!isSidebarCollapsed) {
+          toggleSidebar();
+      }
+  }
+  
+  // Focus on the content textarea
+  if (noteEditorTextarea) {
     setTimeout(() => {
-        document.getElementById("noteEditorTextarea").focus();
+        noteEditorTextarea.focus();
     }, 300);
-}
-
-// Function to save note changes (the old version, left for compatibility)
-function saveNote() {
-    if (activeFolder && activeNote) {
-        plannerData[activeFolder].notes[activeNote].content = document.getElementById("noteContent").value;
-        plannerData[activeFolder].notes[activeNote].priority = document.getElementById("editNotePriority").value;
-        plannerData[activeFolder].notes[activeNote].dueDate = document.getElementById("editNoteDueDate").value;
-        saveProgress();
-    }
-    closeNoteEditor();
+  }
 }
 
 // Save note from the new editor
 function saveNoteFromEditor() {
-    if (currentlyEditingNote && currentlyEditingNote.folder && currentlyEditingNote.note) {
-        const folder = currentlyEditingNote.folder;
-        const note = currentlyEditingNote.note;
-        
-        // Get updated values
-        const content = document.getElementById("noteEditorTextarea").value;
-        const priority = document.getElementById("editorNotePriority").value;
-        const dueDate = document.getElementById("editorNoteDueDate").value;
-        const completed = document.getElementById("editorNoteStatus").value === "completed";
-        
-        // Update note data
-        plannerData[folder].notes[note].content = content;
-        plannerData[folder].notes[note].priority = priority;
-        plannerData[folder].notes[note].dueDate = dueDate;
-        plannerData[folder].notes[note].completed = completed;
-        plannerData[folder].notes[note].modifiedAt = new Date().toISOString();
-        
-        // Save changes
-        saveProgress();
-        
-        // Update last modified date in UI
-        const modifiedDate = new Date();
-        document.getElementById("noteModifiedDate").innerText = modifiedDate.toLocaleString();
-        
-        // Show success message (optional)
-        showToast("Note saved successfully");
-        
-        // Refresh notes in the sidebar
-        const notesContainerId = `notes-${folder.replace(/\s+/g, '-')}`;
-        loadNotes(folder, notesContainerId);
-    }
-}
-
-// Close the note editor
-function closeNoteEditor() {
-    // Hide editor and show welcome screen
-    document.getElementById("noteEditor").classList.add("hidden");
-    document.getElementById("welcomeScreen").classList.remove("hidden");
-    
-    // Reset current editing note
-    currentlyEditingNote = null;
-    
-    // If sidebar was collapsed, expand it
-    if (isSidebarCollapsed) {
-        toggleSidebar();
-    }
+  if (currentlyEditingNote && currentlyEditingNote.folder && currentlyEditingNote.note) {
+      const folder = currentlyEditingNote.folder;
+      const note = currentlyEditingNote.note;
+      
+      const noteEditorTextarea = document.getElementById("noteEditorTextarea");
+      const editorNotePriority = document.getElementById("editorNotePriority");
+      const editorNoteDueDate = document.getElementById("editorNoteDueDate");
+      const editorNoteStatus = document.getElementById("editorNoteStatus");
+      const noteModifiedDate = document.getElementById("noteModifiedDate");
+      
+      if (!noteEditorTextarea || !editorNotePriority || !editorNoteDueDate || !editorNoteStatus) return;
+      
+      // Get updated values
+      const content = noteEditorTextarea.value;
+      const priority = editorNotePriority.value;
+      const dueDate = editorNoteDueDate.value;
+      const completed = editorNoteStatus.value === "completed";
+      
+      // Update note data
+      plannerData[folder].notes[note].content = content;
+      plannerData[folder].notes[note].priority = priority;
+      plannerData[folder].notes[note].dueDate = dueDate;
+      plannerData[folder].notes[note].completed = completed;
+      plannerData[folder].notes[note].modifiedAt = new Date().toISOString();
+      
+      // Save changes
+      saveProgress();
+      
+      // Update last modified date in UI
+      const modifiedDate = new Date();
+      if (noteModifiedDate) noteModifiedDate.innerText = modifiedDate.toLocaleString();
+      
+      // Show success message
+      showToast("Note saved successfully");
+      
+      // Refresh notes in the sidebar
+      const notesContainerId = `notes-${folder.replace(/\s+/g, '-')}`;
+      loadNotes(folder, notesContainerId);
+  }
 }
 
 // Function to show delete folder confirmation modal
 function showDeleteFolderModal(folderName) {
-    folderToDelete = folderName;
-    document.getElementById("deleteFolderModal").style.display = "flex";
-    document.getElementById("deleteFolderName").innerText = folderName;
+  folderToDelete = folderName;
+  
+  const deleteFolderModal = document.getElementById("deleteFolderModal");
+  const deleteFolderName = document.getElementById("deleteFolderName");
+  
+  if (!deleteFolderModal || !deleteFolderName) return;
+  
+  deleteFolderModal.style.display = "flex";
+  deleteFolderName.innerText = folderName;
 }
 
 // Function to confirm folder deletion
 function confirmDeleteFolder() {
-    if (folderToDelete) {
-        delete plannerData[folderToDelete];
-        saveProgress();
-        loadProgress();
-        folderToDelete = null;
-    }
-    closeDeleteFolderModal();
+  if (folderToDelete) {
+      delete plannerData[folderToDelete];
+      saveProgress();
+      loadProgress();
+      folderToDelete = null;
+      
+      // Show success message
+      showToast("Folder deleted successfully");
+  }
+  closeDeleteFolderModal();
 }
 
 // Function to close delete folder modal
 function closeDeleteFolderModal() {
-    document.getElementById("deleteFolderModal").style.display = "none";
+  const deleteFolderModal = document.getElementById("deleteFolderModal");
+  if (deleteFolderModal) {
+    deleteFolderModal.style.display = "none";
+  }
 }
 
 // Function to show delete note confirmation modal
 function showDeleteNoteModal(folderName, noteName) {
-    folderToDelete = folderName;
-    noteToDelete = noteName;
-    document.getElementById("deleteNoteModal").style.display = "flex";
-    document.getElementById("deleteNoteName").innerText = noteName;
+  folderToDelete = folderName;
+  noteToDelete = noteName;
+  
+  const deleteNoteModal = document.getElementById("deleteNoteModal");
+  const deleteNoteName = document.getElementById("deleteNoteName");
+  
+  if (!deleteNoteModal || !deleteNoteName) return;
+  
+  deleteNoteModal.style.display = "flex";
+  deleteNoteName.innerText = noteName;
 }
 
 // Function to confirm note deletion
 function confirmDeleteNote() {
-    if (folderToDelete && noteToDelete) {
+  if (folderToDelete && noteToDelete) {
+      // Check if note exists before trying to delete
+      if (plannerData[folderToDelete] && plannerData[folderToDelete].notes && 
+          plannerData[folderToDelete].notes[noteToDelete]) {
+        
         delete plannerData[folderToDelete].notes[noteToDelete];
         saveProgress();
         const notesContainerId = `notes-${folderToDelete.replace(/\s+/g, '-')}`;
         loadNotes(folderToDelete, notesContainerId);
-    }
-    closeDeleteNoteModal();
+        
+// If we're deleting the currently open note, close the editor
+if (currentlyEditingNote && 
+  currentlyEditingNote.folder === folderToDelete && 
+  currentlyEditingNote.note === noteToDelete) {
+closeNoteEditor();
+}
+
+// Show success message
+showToast("Note deleted successfully");
+}
+}
+closeDeleteNoteModal();
 }
 
 // Function to close delete note modal
 function closeDeleteNoteModal() {
-    document.getElementById("deleteNoteModal").style.display = "none";
-    folderToDelete = null;
-    noteToDelete = null;
+const deleteNoteModal = document.getElementById("deleteNoteModal");
+if (deleteNoteModal) {
+deleteNoteModal.style.display = "none";
+}
+folderToDelete = null;
+noteToDelete = null;
 }
 
-// Function to open rename folder modal
+// Function to initiate rename folder operation
 function renameFolder(folderName) {
-    folderToRename = folderName;
-    document.getElementById("renameFolderInput").value = folderName;
-    document.getElementById("renameFolderColorInput").value = plannerData[folderName].color || "#4CAF50";
-    document.getElementById("renameFolderModal").style.display = "flex";
+folderToRename = folderName;
+
+const renameFolderModal = document.getElementById("renameFolderModal");
+const renameFolderInput = document.getElementById("renameFolderInput");
+const folderColorRenameInput = document.getElementById("folderColorRenameInput");
+
+if (!renameFolderModal || !renameFolderInput || !folderColorRenameInput) return;
+
+renameFolderModal.style.display = "flex";
+renameFolderInput.value = folderName;
+folderColorRenameInput.value = plannerData[folderName].color || "#4CAF50";
 }
 
 // Function to confirm folder rename
 function confirmRenameFolder() {
-    let newFolderName = document.getElementById("renameFolderInput").value.trim();
-    let newFolderColor = document.getElementById("renameFolderColorInput").value;
-    
-    if (newFolderName && (newFolderName !== folderToRename || newFolderColor !== plannerData[folderToRename].color)) {
-        if (newFolderName !== folderToRename && !plannerData[newFolderName]) {
-            // Name has changed, create new folder
-            plannerData[newFolderName] = {
-                notes: plannerData[folderToRename].notes,
-                color: newFolderColor
-            };
-            delete plannerData[folderToRename];
-        } else {
-            // Only color has changed
-            plannerData[folderToRename].color = newFolderColor;
-        }
-        saveProgress();
-        loadProgress();
-    }
-    closeRenameFolderModal();
+const renameFolderInput = document.getElementById("renameFolderInput");
+const folderColorRenameInput = document.getElementById("folderColorRenameInput");
+
+if (!renameFolderInput || !folderColorRenameInput) return;
+
+const newFolderName = renameFolderInput.value.trim();
+const newColor = folderColorRenameInput.value;
+
+if (folderToRename && newFolderName && newFolderName !== folderToRename) {
+// Create new folder entry with the same notes
+plannerData[newFolderName] = {
+notes: {...plannerData[folderToRename].notes},
+color: newColor
+};
+
+// Delete old folder
+delete plannerData[folderToRename];
+saveProgress();
+loadProgress();
+
+// Show success message
+showToast("Folder renamed successfully");
+} else if (folderToRename && newFolderName === folderToRename && plannerData[folderToRename]) {
+// Just update the color if name hasn't changed
+plannerData[folderToRename].color = newColor;
+saveProgress();
+loadProgress();
+
+// Show success message
+showToast("Folder color updated");
+}
+closeRenameFolderModal();
 }
 
 // Function to close rename folder modal
 function closeRenameFolderModal() {
-    document.getElementById("renameFolderModal").style.display = "none";
-    document.getElementById("renameFolderInput").value = "";
-    folderToRename = null;
+const renameFolderModal = document.getElementById("renameFolderModal");
+if (renameFolderModal) {
+renameFolderModal.style.display = "none";
+}
+folderToRename = null;
 }
 
 // Search functionality
 function performSearch() {
-    const searchTerm = document.getElementById("searchInput").value.trim().toLowerCase();
-    const searchResults = document.getElementById("searchResults");
-    
-    // Clear previous results
-    searchResults.innerHTML = "";
-    
-    if (searchTerm.length < 2) {
-        searchResults.classList.add("hidden");
-        return;
-    }
-    
-    searchResults.classList.remove("hidden");
-    let resultsFound = 0;
-    
-   // Search through all notes
-    Object.keys(plannerData).forEach(folderName => {
-        if (plannerData[folderName].notes) {
-            Object.keys(plannerData[folderName].notes).forEach(noteName => {
-                const noteData = plannerData[folderName].notes[noteName];
-                const noteContent = noteData.content.toLowerCase();
-                const noteTitleLower = noteName.toLowerCase();
-                
-                if (noteTitleLower.includes(searchTerm) || noteContent.includes(searchTerm)) {
-                    // Add to search results
-                    const resultItem = document.createElement("div");
-                    resultItem.classList.add("search-result");
-                    resultItem.innerHTML = `
-                        <div class="result-info">
-                            <div class="result-title">${noteName}</div>
-                            <div class="result-folder">in ${folderName}</div>
-                        </div>
-                        <button class="result-open-btn" onclick="openNoteFromSearch('${folderName}', '${noteName}')">Open</button>
-                    `;
-                    searchResults.appendChild(resultItem);
-                    resultsFound++;
-                }
-            });
-        }
-    });
-    
-    if (resultsFound === 0) {
-        searchResults.innerHTML = "<div class='no-results'>No results found</div>";
-    }
+const searchInput = document.getElementById("searchInput");
+if (!searchInput) return;
+
+const searchTerm = searchInput.value.toLowerCase().trim();
+const searchResults = document.getElementById("searchResults");
+
+if (!searchResults) return;
+
+// Clear previous search results
+searchResults.innerHTML = "";
+
+if (searchTerm.length < 2) {
+searchResults.innerHTML = "";
+return;
+}
+
+// Show search results container
+searchResults.classList.remove("hidden");
+
+let resultCount = 0;
+
+// Search through all folders and notes
+Object.keys(plannerData).forEach(folderName => {
+const folder = plannerData[folderName];
+if (folder && folder.notes) {
+Object.keys(folder.notes).forEach(noteName => {
+const note = folder.notes[noteName];
+
+// Check if note title or content contains search term
+if (noteName.toLowerCase().includes(searchTerm) || 
+  (note.content && note.content.toLowerCase().includes(searchTerm))) {
+
+resultCount++;
+
+// Create search result item
+const resultItem = document.createElement("div");
+resultItem.classList.add("search-result-item");
+
+// Format due date if available
+let dueDateStr = note.dueDate ? 
+  `<span class="search-result-due-date">Due: ${new Date(note.dueDate).toLocaleDateString()}</span>` : '';
+
+// Get a content snippet containing the search term
+let contentSnippet = "";
+if (note.content) {
+  const content = note.content.toLowerCase();
+  const termIndex = content.indexOf(searchTerm);
+  if (termIndex !== -1) {
+    // Create a snippet around the search term
+    const startIndex = Math.max(0, termIndex - 30);
+    const endIndex = Math.min(content.length, termIndex + searchTerm.length + 30);
+    contentSnippet = note.content.substring(startIndex, endIndex);
+    if (startIndex > 0) contentSnippet = "..." + contentSnippet;
+    if (endIndex < content.length) contentSnippet += "...";
+  } else {
+    // If term not found in content (might be in title), just use the beginning
+    contentSnippet = note.content.substring(0, 60) + "...";
+  }
+}
+
+// Create the HTML for the result item
+resultItem.innerHTML = `
+  <div class="search-result-header">
+    <strong>${noteName}</strong>
+    <span class="search-result-folder">${folderName}</span>
+    ${dueDateStr}
+  </div>
+  <div class="search-result-content">${contentSnippet}</div>
+  <button class="search-result-open-btn" onclick="openNote('${folderName}', '${noteName}')">
+    Open Note
+  </button>
+`;
+
+searchResults.appendChild(resultItem);
+}
+});
+}
+});
+
+// Show "no results" message if needed
+if (resultCount === 0) {
+searchResults.innerHTML = `<div class="no-results">No results found for "${searchTerm}"</div>`;
+}
 }
 
 // Clear search
 function clearSearch() {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("searchResults").classList.add("hidden");
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+
+if (searchInput) searchInput.value = "";
+if (searchResults) {
+searchResults.innerHTML = "";
+searchResults.classList.add("hidden");
+}
 }
 
-// Open note from search results
-function openNoteFromSearch(folderName, noteName) {
-    // First open the folder
-    openFolder(folderName);
-    
-    // Then open the note
-    setTimeout(() => {
-        openNote(folderName, noteName);
-    }, 300);
-    
-    // Clear search
-    clearSearch();
-}
-
-// Simple toast notification function
+// Toast notification system
 function showToast(message, duration = 3000) {
-    // Create toast element if it doesn't exist
-    let toast = document.getElementById("toast");
-    if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "toast";
-        toast.style.position = "fixed";
-        toast.style.bottom = "20px";
-        toast.style.right = "20px";
-        toast.style.backgroundColor = "var(--success-color)";
-        toast.style.color = "white";
-        toast.style.padding = "10px 20px";
-        toast.style.borderRadius = "4px";
-        toast.style.zIndex = "1000";
-        toast.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-        toast.style.transition = "opacity 0.3s ease";
-        document.body.appendChild(toast);
-    }
-    
-    // Update message and show
-    toast.textContent = message;
-    toast.style.opacity = "1";
-    
-    // Hide after duration
-    clearTimeout(window.toastTimeout);
-    window.toastTimeout = setTimeout(() => {
-        toast.style.opacity = "0";
-    }, duration);
+// Create toast container if it doesn't exist
+let toastContainer = document.getElementById("toastContainer");
+if (!toastContainer) {
+toastContainer = document.createElement("div");
+toastContainer.id = "toastContainer";
+document.body.appendChild(toastContainer);
 }
 
+// Create toast message element
+const toast = document.createElement("div");
+toast.classList.add("toast");
+toast.textContent = message;
 
+// Add toast to container
+toastContainer.appendChild(toast);
 
+// Animation to show the toast
+setTimeout(() => {
+toast.classList.add("show");
+}, 10);
 
-
-//Create, Log-In, Log-Out Account Function
-// Authentication System for Daily Planner
-
-// User data structure
-let users = JSON.parse(localStorage.getItem('planner_users')) || [];
-let currentUser = JSON.parse(localStorage.getItem('planner_current_user')) || null;
-
-// DOM elements for auth
-document.addEventListener('DOMContentLoaded', function() {
-  // Create auth container and add it to the DOM
-  const appContainer = document.querySelector('.app-container');
-  const authContainer = document.createElement('div');
-  authContainer.id = 'authContainer';
-  authContainer.className = 'auth-container';
-  
-  // Set up HTML for auth forms
-  authContainer.innerHTML = `
-    <div class="auth-modal">
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="loginTab">Login</button>
-        <button class="auth-tab" id="registerTab">Register</button>
-      </div>
-      
-      <div class="auth-form-container">
-        <!-- Login Form -->
-        <form id="loginForm" class="auth-form">
-          <div class="form-group">
-            <label for="loginEmail">Email</label>
-            <input type="email" id="loginEmail" required placeholder="Enter your email">
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" required placeholder="Enter your password">
-          </div>
-          <button type="submit" class="auth-button">Login</button>
-          <p id="loginError" class="auth-error"></p>
-        </form>
-        
-        <!-- Register Form -->
-        <form id="registerForm" class="auth-form hidden">
-          <div class="form-group">
-            <label for="registerName">Name</label>
-            <input type="text" id="registerName" required placeholder="Enter your name">
-          </div>
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input type="email" id="registerEmail" required placeholder="Enter your email">
-          </div>
-          <div class="form-group">
-            <label for="registerPassword">Password</label>
-            <input type="password" id="registerPassword" required placeholder="Create a password">
-          </div>
-          <div class="form-group">
-            <label for="registerConfirmPassword">Confirm Password</label>
-            <input type="password" id="registerConfirmPassword" required placeholder="Confirm your password">
-          </div>
-          <button type="submit" class="auth-button">Create Account</button>
-          <p id="registerError" class="auth-error"></p>
-        </form>
-      </div>
-    </div>
-  `;
-  
-  // Add auth container before the app container
-  document.body.insertBefore(authContainer, appContainer);
-  
-  // Add user profile button to the header
-  const header = document.querySelector('.header');
-  const userProfileButton = document.createElement('button');
-  userProfileButton.id = 'userProfileBtn';
-  userProfileButton.innerHTML = '👤 User';
-  userProfileButton.className = 'hidden';
-  
-  const toolbar = header.querySelector('.toolbar');
-  toolbar.insertBefore(userProfileButton, toolbar.firstChild);
-  
-  // Create user dropdown menu
-  const userDropdown = document.createElement('div');
-  userDropdown.id = 'userDropdown';
-  userDropdown.className = 'user-dropdown hidden';
-  userDropdown.innerHTML = `
-    <div class="user-dropdown-header">
-      <span id="userDisplayName"></span>
-      <span id="userDisplayEmail"></span>
-    </div>
-    <div class="user-dropdown-content">
-      <button id="logoutBtn">Logout</button>
-    </div>
-  `;
-  
-  header.appendChild(userDropdown);
-  
-  // Add event listeners
-  document.getElementById('loginTab').addEventListener('click', showLoginForm);
-  document.getElementById('registerTab').addEventListener('click', showRegisterForm);
-  document.getElementById('loginForm').addEventListener('submit', handleLogin);
-  document.getElementById('registerForm').addEventListener('submit', handleRegister);
-  document.getElementById('userProfileBtn').addEventListener('click', toggleUserDropdown);
-  document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-  
-  // Check if user is already logged in
-  checkAuthState();
-  
-  // Add styles
-  addAuthStyles();
-});
-
-// Authentication functions
-function showLoginForm() {
-  document.getElementById('loginTab').classList.add('active');
-  document.getElementById('registerTab').classList.remove('active');
-  document.getElementById('loginForm').classList.remove('hidden');
-  document.getElementById('registerForm').classList.add('hidden');
+// Remove toast after duration
+setTimeout(() => {
+toast.classList.remove("show");
+setTimeout(() => {
+if (toastContainer.contains(toast)) {
+toastContainer.removeChild(toast);
 }
-
-function showRegisterForm() {
-  document.getElementById('registerTab').classList.add('active');
-  document.getElementById('loginTab').classList.remove('active');
-  document.getElementById('registerForm').classList.remove('hidden');
-  document.getElementById('loginForm').classList.add('hidden');
+}, 300); // Match this with CSS transition time
+}, duration);
 }
-
-function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const errorElement = document.getElementById('loginError');
-  
-  // Validate inputs
-  if (!email || !password) {
-    errorElement.textContent = 'Please enter both email and password';
-    return;
-  }
-  
-  // Check if user exists
-  const user = users.find(u => u.email === email);
-  if (!user) {
-    errorElement.textContent = 'User not found';
-    return;
-  }
-  
-  // Check password
-  if (user.password !== password) {
-    errorElement.textContent = 'Incorrect password';
-    return;
-  }
-  
-  // Login successful
-  loginUser(user);
-}
-
-function handleRegister(e) {
-  e.preventDefault();
-  const name = document.getElementById('registerName').value;
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  const confirmPassword = document.getElementById('registerConfirmPassword').value;
-  const errorElement = document.getElementById('registerError');
-  
-  // Validate inputs
-  if (!name || !email || !password || !confirmPassword) {
-    errorElement.textContent = 'Please fill in all fields';
-    return;
-  }
-  
-  // Check if passwords match
-  if (password !== confirmPassword) {
-    errorElement.textContent = 'Passwords do not match';
-    return;
-  }
-  
-  // Check if user already exists
-  if (users.some(u => u.email === email)) {
-    errorElement.textContent = 'User with this email already exists';
-    return;
-  }
-  
-  // Create new user
-  const newUser = {
-    id: Date.now().toString(),
-    name,
-    email,
-    password,
-    folders: getDefaultFolders(), // Create default folders for new users
-    created: new Date().toISOString()
-  };
-  
-  users.push(newUser);
-  saveUsers();
-  
-  // Login the new user
-  loginUser(newUser);
-}
-
-function loginUser(user) {
-  // Set current user
-  currentUser = {
-    id: user.id,
-    name: user.name,
-    email: user.email
-  };
-  
-  // Save to localStorage
-  localStorage.setItem('planner_current_user', JSON.stringify(currentUser));
-  
-  // Update UI
-  hideAuthContainer();
-  showUserProfile();
-  
-  // Load user data
-  loadUserData(user.id);
-}
-
-function handleLogout() {
-  // Clear current user
-  currentUser = null;
-  localStorage.removeItem('planner_current_user');
-  
-  // Update UI
-  hideUserProfile();
-  showAuthContainer();
-  
-  // Clear displayed data
-  resetAppState();
-}
-
-function checkAuthState() {
-  if (currentUser) {
-    hideAuthContainer();
-    showUserProfile();
-    loadUserData(currentUser.id);
-  } else {
-    showAuthContainer();
-    hideUserProfile();
-  }
-}
-
-function hideAuthContainer() {
-  document.getElementById('authContainer').classList.add('hidden');
-  document.querySelector('.app-container').classList.remove('hidden');
-}
-
-function showAuthContainer() {
-  document.getElementById('authContainer').classList.remove('hidden');
-  document.querySelector('.app-container').classList.add('hidden');
-}
-
-function showUserProfile() {
-  const userProfileBtn = document.getElementById('userProfileBtn');
-  userProfileBtn.classList.remove('hidden');
-  userProfileBtn.textContent = `👤 ${currentUser.name}`;
-  
-  // Update dropdown
-  document.getElementById('userDisplayName').textContent = currentUser.name;
-  document.getElementById('userDisplayEmail').textContent = currentUser.email;
-}
-
-function hideUserProfile() {
-  document.getElementById('userProfileBtn').classList.add('hidden');
-  document.getElementById('userDropdown').classList.add('hidden');
-}
-
-function toggleUserDropdown() {
-  document.getElementById('userDropdown').classList.toggle('hidden');
-}
-
-function saveUsers() {
-  localStorage.setItem('planner_users', JSON.stringify(users));
-}
-
-// Data management functions
-function getDefaultFolders() {
-  return [
-    {
-      id: 'default',
-      name: 'Default',
-      color: '#4CAF50',
-      isOpen: true,
-      notes: []
-    },
-    {
-      id: 'work',
-      name: 'Work',
-      color: '#2196F3',
-      isOpen: true,
-      notes: []
-    },
-    {
-      id: 'personal',
-      name: 'Personal',
-      color: '#FF9800',
-      isOpen: true,
-      notes: []
-    }
-  ];
-}
-
-function loadUserData(userId) {
-  const user = users.find(u => u.id === userId);
-  if (!user) return;
-  
-  // Load folders
-  window.folders = user.folders || getDefaultFolders();
-  
-  // Re-render folders
-  renderFolders();
-}
-
-function saveUserData() {
-  if (!currentUser) return;
-  
-  // Find user in users array
-  const userIndex = users.findIndex(u => u.id === currentUser.id);
-  if (userIndex === -1) return;
-  
-  // Update user data
-  users[userIndex].folders = window.folders;
-  
-  // Save to localStorage
-  saveUsers();
-}
-
-function resetAppState() {
-  // Clear all data from the UI
-  window.folders = getDefaultFolders();
-  renderFolders();
-  
-  // Hide editor if open
-  const noteEditor = document.getElementById('noteEditor');
-  if (!noteEditor.classList.contains('hidden')) {
-    noteEditor.classList.add('hidden');
-    document.getElementById('welcomeScreen').classList.remove('hidden');
-  }
-}
-
-// Override the original save functions to save user data
-const originalAddFolder = window.addFolder;
-window.addFolder = function(name, color) {
-  originalAddFolder(name, color);
-  saveUserData();
-};
-
-// Hook into existing functions to save user data after operations
-function hookSaveFunctions() {
-  // Store original functions
-  const originalFunctions = {
-    saveNote: window.saveNote,
-    deleteNote: window.deleteNote,
-    deleteFolder: window.deleteFolder,
-    renameFolder: window.renameFolder
-  };
-  
-  // Override functions to add saving user data
-  window.saveNote = function() {
-    const result = originalFunctions.saveNote.apply(this, arguments);
-    saveUserData();
-    return result;
-  };
-  
-  window.deleteNote = function() {
-    const result = originalFunctions.deleteNote.apply(this, arguments);
-    saveUserData();
-    return result;
-  };
-  
-  window.deleteFolder = function() {
-    const result = originalFunctions.deleteFolder.apply(this, arguments);
-    saveUserData();
-    return result;
-  };
-  
-  window.renameFolder = function() {
-    const result = originalFunctions.renameFolder.apply(this, arguments);
-    saveUserData();
-    return result;
-  };
-}
-
-// Call this after the original app script has loaded
-document.addEventListener('DOMContentLoaded', function() {
-  // Wait for the original script to initialize
-  setTimeout(hookSaveFunctions, 100);
-});
-
-// Add styles for auth components
-function addAuthStyles() {
-  const styleElement = document.createElement('style');
-  styleElement.textContent = `
-    .auth-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: var(--background-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .auth-modal {
-      background-color: var(--card-background);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px var(--shadow-color);
-      width: 400px;
-      max-width: 90%;
-      overflow: hidden;
-    }
-    
-    .auth-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    .auth-tab {
-      flex: 1;
-      padding: 15px;
-      text-align: center;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-color);
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-    
-    .auth-tab.active {
-      background-color: var(--card-background);
-      border-bottom: 3px solid var(--button-primary);
-    }
-    
-    .auth-form-container {
-      padding: 20px;
-    }
-    
-    .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .auth-button {
-      padding: 12px;
-      background-color: var(--button-primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-    
-    .auth-button:hover {
-      background-color: var(--button-hover);
-    }
-    
-    .auth-error {
-      color: var(--danger-color);
-      margin-top: 10px;
-      font-size: 14px;
-      text-align: center;
-    }
-    
-    .user-dropdown {
-      position: absolute;
-      top: 60px;
-      right: 20px;
-      background-color: var(--card-background);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      box-shadow: 0 4px 8px var(--shadow-color);
-      z-index: 10;
-      width: 200px;
-    }
-    
-    .user-dropdown-header {
-      padding: 10px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-    }
-    
-    #userDisplayName {
-      font-weight: bold;
-    }
-    
-    #userDisplayEmail {
-      font-size: 0.9em;
-      color: #888;
-    }
-    
-    .user-dropdown-content {
-      padding: 10px;
-    }
-    
-    .user-dropdown-content button {
-      width: 100%;
-      text-align: left;
-      padding: 8px;
-      background-color: transparent;
-      color: var(--text-color);
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    
-    .user-dropdown-content button:hover {
-      background-color: var(--hover-color);
-    }
-  `;
-  document.head.appendChild(styleElement);
-}
-// Add this function to your auth.js file
-function updateSidebarWidth() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-      sidebar.style.width = '20%';
-    }
-  }
-  
-  // Call this function after the DOM is loaded
-  document.addEventListener('DOMContentLoaded', function() {
-    // Your existing code
-    // ...
-    
-    // Update sidebar width
-    updateSidebarWidth();
-  });
